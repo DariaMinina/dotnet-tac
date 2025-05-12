@@ -1,0 +1,58 @@
+name: .NET Core CI/CD
+
+on:
+  push:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      Solution_Name: dotnet-tac
+      Test_Project_Path: TACBuilder.Tests\TACBuilder.Tests.csproj
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Restore dependencies
+      run: dotnet restore ${{ env.Solution_Name }}.sln
+
+    - name: Build solution
+      run: dotnet build ${{ env.Solution_Name }}.sln --configuration Release --no-restore
+
+    - name: Publish Tests
+      run: dotnet publish ${{ env.Test_Project_Path }} --configuration Release --self-contained true --output ./publish
+
+  test:
+    runs-on: windows-latest
+    needs: build
+    env:
+      Test_Project_Path: TACBuilder.Tests\TACBuilder.Tests.csproj
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Run unit tests
+      run: dotnet test ${{ env.Test_Project_Path }} --configuration Release --no-build --logger "trx;LogFileName=testresults.trx"
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
