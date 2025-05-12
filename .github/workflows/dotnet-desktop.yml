@@ -24,12 +24,9 @@ jobs:
 
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v2
-
-    - name: Add macOS runtime support
-      run: dotnet workload install macos
       
     - name: Publish TACBuilder.Tests
-      run: dotnet publish TACBuilder.Tests\TACBuilder.Tests.csproj --self-contained -r osx-arm64 -c Debug
+      run: dotnet publish TACBuilder.Tests\TACBuilder.Tests.csproj --self-contained true -c Debug
 
     - name: Execute unit tests
       run: dotnet test
